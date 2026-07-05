@@ -136,7 +136,7 @@ q = the ⌈(1 − α)(n_cal + 1)⌉-th smallest calibration score
 This is the standard split-conformal-prediction quantile formula, and it comes with a distribution-free guarantee: under exchangeability, a *true* known-class point will exceed this threshold (and thus get rejected) at most `α` of the time, regardless of what the underlying quantum model's decision boundary actually looks like. `q` is the single number that separates "confidently known" from "reject as zero-day."
 
 ### 6.3 Lipschitz robustness estimate
-Before running inference, the notebook estimates the **Lipschitz constant** of the quantum feature map — how much the output density matrix can change for a small perturbation `δ` in the input angles:
+Before running inference, this estimates the **Lipschitz constant** of the quantum feature map — how much the output density matrix can change for a small perturbation `δ` in the input angles:
 
 ```
 L_φ ≈ max over probes of  trace_distance(ρ(x), ρ(x + δ·noise)) / δ
@@ -202,27 +202,16 @@ A CUDA-capable GPU is used automatically if available (`torch.device("cuda" if t
 
 ---
 
-## 10. Key design choices, and why
 
-| Choice | Rationale |
-|---|---|
-| **Density-matrix simulation (`default.mixed`)** instead of pure states | Needed to model depolarizing noise explicitly and to compute fidelity/trace-distance between *mixed* class prototypes, not just pure states. |
-| **Data re-uploading** | Increases circuit expressivity without adding qubits — a well-known technique for shallow, near-term-friendly circuits. |
-| **Ring CNOT entanglement** | Cheap, hardware-efficient entangling pattern (linear number of 2-qubit gates) that still connects every qubit into a single loop. |
-| **Fidelity/trace-distance-based loss terms** (`L_intra`, `L_inter`) | Directly shapes the quantum state geometry — same-class states should be similar (high fidelity), different-class prototypes should be distinguishable (high trace distance) — rather than relying on the classifier head alone to do all the work. |
-| **Conformal prediction over a fixed similarity threshold** | Gives a **calibrated, distribution-free** false-alarm rate guarantee, instead of an arbitrary hand-picked similarity cutoff. |
-| **Random Forest feature selection down to 6 features** | Keeps qubit count (and thus simulation cost) tractable while retaining the most predictive raw features. |
 
----
-
-## 11. Known limitations / open questions
+## 10. limitations - for the traing phase
 
 - The notebook currently runs on a **500-row sample**; results should be re-validated on a larger slice (or the full ~400k rows) before drawing strong conclusions, especially since the "zero-day" class is by definition the rarest and calibration/test splits of it can be very small.
-- Only one class is ever held out as "zero-day" — the true rarest class in this fixed sample. Results may be sensitive to *which* class ends up being the minority one when re-sampling.
+- Only one class is ever held out as "zero-day" — the true rarest class in this fixed sample. 
 - `L_intra`/`L_inter` are computed **per-batch**, not over the full dataset, so class prototypes used during training can be noisy estimates for small batch sizes (`BATCH = 10`).
-- `C_f` in the confidence-radius formula is currently a fixed placeholder (`1.0`) rather than an estimated/derived constant.
+- `C_f` in the confidence-radius formula is currently a fixed placeholder (`1.0`) 
 - Only 5 training epochs are configured — this is convenient for quick iteration but likely under-trained for a production-quality result; gradient variance logging is in place to help detect barren-plateau issues if depth/qubit count are scaled up.
-- Grid cells 1, 9, 10, 11, 16 in the notebook are empty/setup-only cells (package installs, a blank markdown cell) and can be cleaned up or annotated.
+- by running 10000 data rows , it take more time so that i uses limited data and epoch for this architechture , many fixes required in random number or values generation for theta values etc.
 
 ---
 
